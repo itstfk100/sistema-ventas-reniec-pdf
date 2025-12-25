@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gestión de Usuarios</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-light min-vh-100">
+
+<nav class="navbar bg-success navbar-dark px-4">
+  <div class="container-fluid">
+    <a class="navbar-brand d-flex align-items-center" href="/dashboard">
+      <i class="bi bi-house-door-fill me-2"></i> Panel de Administración
+    </a>
+    <a href="/login" class="btn btn-outline-light">Cerrar Sesión</a>
+  </div>
+</nav>
+
+<div class="container my-4 p-4 bg-white rounded-4 shadow">
+  <h2 class="text-center text-success mb-4">Gestión de Usuarios</h2>
+
+  <div class="d-flex justify-content-between mb-3">
+    <input type="text" class="form-control w-25" placeholder="🔍 Buscar...">
+    <div>
+      <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#modalUsuario">+ Nuevo Usuario</button>
+      <button class="btn btn-warning text-white me-2" onclick="abrirModalEditarUsuario()"><i class="bi bi-pencil-square"></i> Editar</button>
+      <button class="btn btn-danger" onclick="confirmarEliminacionUsuario()"><i class="bi bi-trash"></i> Eliminar</button>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead class="table-success">
+      <tr>
+        <th></th>
+        <th>Nombre completo</th>
+        <th>Usuario</th>
+        <th>Correo</th>
+        <th>Rol</th>
+      </tr>
+      </thead>
+      <tbody id="tablaUsuarios">
+      <tr th:each="usuario : ${usuarios}">
+        <td><input type="radio" name="usuarioSelect" th:value="${usuario.id}"></td>
+        <td th:text="${usuario.nombre}"></td>
+        <td th:text="${usuario.username}"></td>
+        <td th:text="${usuario.email}"></td>
+        <td th:text="${usuario.rol}"></td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="modalUsuario" tabindex="-1" aria-labelledby="modalUsuarioLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content border-success">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="modalUsuarioLabel">Registrar Usuario</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formRegistroUsuario" action="/usuarios/nuevo" method="POST">
+          <div class="mb-2">
+            <label class="form-label">Nombre completo *</label>
+            <input type="text" name="nombre" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Usuario *</label>
+            <input type="text" name="username" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Contraseña *</label>
+            <input type="password" name="password" id="clave" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Confirmar contraseña *</label>
+            <input type="password" id="confirmarClave" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Correo *</label>
+            <input type="email" name="email" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Rol *</label>
+            <select name="rol" id="rol" class="form-select" required>
+              <option disabled selected value="">--Seleccionar--</option>
+              <option value="Administrador">Administrador</option>
+              <option value="Empleado">Empleado</option>
+            </select>
+          </div>
+          <div class="form-text">(*) Campos obligatorios</div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-success" onclick="return validarRegistroUsuario()">Registrar</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalEditarUsuario" tabindex="-1" aria-labelledby="modalEditarUsuarioLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content border-success">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="modalEditarUsuarioLabel">Editar Usuario</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEditarUsuario" method="POST">
+          <input type="hidden" name="id" id="editUsuarioId"> <div class="mb-2">
+          <label class="form-label">Nombre completo *</label>
+          <input type="text" name="nombre" id="editNombre" class="form-control" required>
+        </div>
+          <div class="mb-2">
+            <label class="form-label">Usuario *</label>
+            <input type="text" name="username" id="editUsername" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Contraseña (dejar vacío para no cambiar)</label>
+            <input type="password" name="password" id="editPassword" class="form-control">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Correo *</label>
+            <input type="email" name="email" id="editCorreo" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Rol *</label>
+            <select name="rol" id="editRol" class="form-select" required>
+              <option value="Administrador">Administrador</option>
+              <option value="Empleado">Empleado</option>
+            </select>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-success" onclick="return validarEdicionUsuario()">Guardar cambios</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  function validarRegistroUsuario() {
+    const nombre = document.querySelector('#formRegistroUsuario input[name="nombre"]').value.trim();
+    const username = document.querySelector('#formRegistroUsuario input[name="username"]').value.trim();
+    const password = document.getElementById('clave').value.trim();
+    const confirmarPassword = document.getElementById('confirmarClave').value.trim();
+    const email = document.querySelector('#formRegistroUsuario input[name="email"]').value.trim();
+    const rol = document.querySelector('#formRegistroUsuario select[name="rol"]').value;
+
+    if (!nombre || !username || !password || !confirmarPassword || !email || !rol) {
+      Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Completa todos los campos obligatorios.' });
+      return false;
+    }
+
+    if (password !== confirmarPassword) {
+      Swal.fire({ icon: 'error', title: 'Contraseñas no coinciden', text: 'Asegúrate de que ambas contraseñas coincidan.' });
+      return false;
+    }
+
+    return true;
+  }
+
+  function abrirModalEditarUsuario() {
+    const seleccionado = document.querySelector('input[name="usuarioSelect"]:checked');
+    if (!seleccionado) {
+      Swal.fire({ icon: 'warning', title: 'Seleccione un usuario para editar.' });
+      return;
+    }
+
+    const idUsuario = seleccionado.value;
+    const fila = seleccionado.closest('tr');
+
+    document.getElementById('editUsuarioId').value = idUsuario;
+    document.getElementById('editNombre').value = fila.cells[1].textContent;
+    document.getElementById('editUsername').value = fila.cells[2].textContent;
+    document.getElementById('editCorreo').value = fila.cells[3].textContent;
+    document.getElementById('editRol').value = fila.cells[4].textContent;
+    document.getElementById('editPassword').value = '';
+
+    document.getElementById('formEditarUsuario').action = `/usuarios/editar/${idUsuario}`;
+
+    const modal = new bootstrap.Modal(document.getElementById('modalEditarUsuario'));
+    modal.show();
+  }
+
+  function validarEdicionUsuario() {
+    const nombre = document.getElementById('editNombre').value.trim();
+    const username = document.getElementById('editUsername').value.trim();
+    const email = document.getElementById('editCorreo').value.trim();
+    const rol = document.getElementById('editRol').value;
+
+    if (!nombre || !username || !email || !rol) {
+      Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Completa todos los campos obligatorios antes de guardar los cambios.' });
+      return false;
+    }
+    return true;
+  }
+
+  function confirmarEliminacionUsuario() {
+    const seleccionado = document.querySelector('input[name="usuarioSelect"]:checked');
+    if (!seleccionado) {
+      Swal.fire({ icon: 'warning', title: 'Seleccione un usuario para eliminar.' });
+      return;
+    }
+
+    const idUsuario = seleccionado.value;
+
+    Swal.fire({
+      title: '¿Eliminar usuario seleccionado?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6c757d'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/usuarios/eliminar/${idUsuario}`;
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  }
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

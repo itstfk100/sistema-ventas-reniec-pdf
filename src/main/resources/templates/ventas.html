@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Registrar Venta</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            background-color: #f4f6f8;
+        }
+        .navbar {
+            background-color: #0d6efd !important;
+        }
+        .navbar .navbar-brand {
+            color: #ffffff !important;
+        }
+        .navbar .btn-outline-light {
+            color: #ffffff;
+            border-color: #ffffff;
+        }
+        .navbar .btn-outline-light:hover {
+            background-color: #ffffff;
+            color: #0d6efd;
+        }
+        h2, h4 {
+            color: #0d6efd;
+        }
+        .btn-success {
+            background-color: #198754;
+            border-color: #198754;
+        }
+        .btn-success:hover {
+            background-color: #157347;
+            border-color: #157347;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #212529;
+        }
+        .btn-warning:hover {
+            background-color: #e0a800;
+            border-color: #d39e00;
+        }
+        .table-dark {
+            background-color: #0d6efd !important;
+            color: #ffffff;
+        }
+        .autocomplete-results .list-group-item:hover {
+            background-color: #e9f0ff;
+        }
+        .autocomplete-results .list-group-item {
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+            <i class="bi bi-cart-fill"></i> Registro de Venta
+        </a>
+        <a id="cerrarSesionBtn" href="#" class="btn btn-outline-light">Cerrar sesión</a>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h2 class="text-center text-primary mb-4">Registrar Venta</h2>
+
+    <form id="formVenta" action="/ventas/registrar" method="POST">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label class="form-label">Cód. de venta:</label>
+                <input type="text" id="codigoVenta" name="codigoBoleta" class="form-control" th:value="${codigoBoleta}" readonly>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">DNI del cliente:</label>
+                <input type="text"
+                       id="dniCliente"
+                       class="form-control"
+                       placeholder="Ingrese DNI"
+                       maxlength="8">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Cliente:</label>
+                <input type="text"
+                       id="cliente"
+                       name="cliente"
+                       class="form-control"
+                       placeholder="Nombre del cliente"
+                       readonly>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Fecha:</label>
+                <input type="date" id="fecha" name="fecha" class="form-control" required>
+            </div>
+        </div>
+
+        <hr>
+        <h4 class="mb-3">Detalle de la venta</h4>
+
+        <div class="row g-2 mb-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label">Buscar producto por nombre o código:</label>
+                <div class="autocomplete-container">
+                    <input type="text" id="busquedaProducto" class="form-control" placeholder="Escribe para buscar...">
+                    <div id="resultadoBusqueda" class="autocomplete-results list-group"></div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Stock:</label>
+                <input type="number" id="stockDisponible" class="form-control" readonly>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Precio Unit.:</label>
+                <input type="number" id="precioUnitario" class="form-control" readonly>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Cantidad:</label>
+                <input type="number" id="cantidad" class="form-control" min="1" value="1">
+            </div>
+            <div class="col-md-1 d-grid">
+                <button class="btn btn-success" type="button" onclick="agregarProducto()">
+                    <i class="bi bi-plus-circle"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive mb-3">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                <tr>
+                    <th>Código</th>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unit.</th>
+                    <th>Subtotal</th>
+                    <th>Acción</th>
+                </tr>
+                </thead>
+                <tbody id="tablaProductos">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between mb-3">
+            <div><strong id="totalProductos">Total de 0 productos registrados</strong></div>
+            <div><strong id="totalVenta">Total Venta: S/ 0.00</strong></div>
+        </div>
+
+        <div class="text-end">
+            <button class="btn btn-warning me-2 text-white" type="button" onclick="vaciarFormulario()">Vaciar</button>
+            <button class="btn btn-success" type="button" onclick="confirmarVenta()">Confirmar venta</button>
+        </div>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.getElementById("dniCliente").addEventListener("blur", function () {
+    const dni = this.value.trim();
+
+    if (dni.length !== 8 || isNaN(dni)) {
+        return;
+    }
+
+    // Limpia nombre mientras consulta
+    document.getElementById("cliente").value = "Consultando RENIEC...";
+
+    fetch(`/api/reniec/${dni}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("DNI no encontrado");
+            }
+            return response.json();
+        })
+        .then(data => {
+            document.getElementById("cliente").value = data.full_name;
+        })
+        .catch(error => {
+            document.getElementById("cliente").value = "";
+            Swal.fire(
+                'DNI no válido',
+                'No se pudo obtener información del DNI ingresado',
+                'warning'
+            );
+            console.error(error);
+        });
+});
+</script>
+
+
+<script>
+    let productosCarrito = [];
+    let productoSeleccionadoId = null;
+
+    const busquedaProductoInput = document.getElementById('busquedaProducto');
+    const resultadoBusquedaDiv = document.getElementById('resultadoBusqueda');
+
+    // Autocomplete
+    busquedaProductoInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        resultadoBusquedaDiv.innerHTML = '';
+        if (query.length < 2) {
+            resultadoBusquedaDiv.classList.remove('show');
+            return;
+        }
+
+        fetch(`/api/productos/buscar?query=${query}`)
+            .then(response => response.json())
+            .then(productos => {
+                if (productos.length === 0) {
+                    resultadoBusquedaDiv.innerHTML = '<div class="list-group-item">No se encontraron productos.</div>';
+                } else {
+                    productos.forEach(p => {
+                        const item = document.createElement('a');
+                        item.href = '#';
+                        item.className = 'list-group-item list-group-item-action';
+                        item.innerHTML = `<strong>${p.nombre}</strong> <small>(Cód: ${p.id}) - Stock: ${p.stock}</small>`;
+
+                        item.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            seleccionarProducto(p);
+                        });
+                        resultadoBusquedaDiv.appendChild(item);
+                    });
+                }
+                resultadoBusquedaDiv.classList.add('show');
+            })
+            .catch(error => {
+                console.error('Error al buscar productos:', error);
+                resultadoBusquedaDiv.innerHTML = '<div class="list-group-item text-danger">Error de conexión.</div>';
+                resultadoBusquedaDiv.classList.add('show');
+            });
+    });
+
+    // Ocultar resultados al hacer click fuera
+    document.addEventListener('click', function(event) {
+        if (!busquedaProductoInput.contains(event.target) && !resultadoBusquedaDiv.contains(event.target)) {
+            resultadoBusquedaDiv.classList.remove('show');
+        }
+    });
+
+    function seleccionarProducto(producto) {
+        productoSeleccionadoId = producto.id;
+        busquedaProductoInput.value = producto.nombre;
+        document.getElementById('stockDisponible').value = producto.stock;
+        document.getElementById('precioUnitario').value = producto.precioVenta.toFixed(2);
+        document.getElementById('cantidad').max = producto.stock;
+        document.getElementById('cantidad').value = 1;
+        resultadoBusquedaDiv.classList.remove('show');
+        resultadoBusquedaDiv.innerHTML = ''; // aseguramos que desaparezca
+    }
+
+    function agregarProducto() {
+        const cantidad = parseInt(document.getElementById('cantidad').value);
+        const stock = parseInt(document.getElementById('stockDisponible').value);
+        const precioUnitario = parseFloat(document.getElementById('precioUnitario').value);
+
+        if (!productoSeleccionadoId) {
+            Swal.fire('Error', 'Debe seleccionar un producto de la lista desplegable.', 'error');
+            return;
+        }
+        if (cantidad <= 0 || isNaN(cantidad)) {
+            Swal.fire('Error', 'La cantidad debe ser un número positivo.', 'error');
+            return;
+        }
+        if (cantidad > stock) {
+            Swal.fire('Error', `La cantidad solicitada supera el stock disponible (${stock}).`, 'error');
+            return;
+        }
+        if (isNaN(precioUnitario) || precioUnitario <= 0) {
+            Swal.fire('Error', 'El producto seleccionado no tiene un precio unitario válido.', 'error');
+            return;
+        }
+
+        const productoExistente = productosCarrito.find(p => p.productoId === productoSeleccionadoId);
+
+        if (productoExistente) {
+            if (productoExistente.cantidad + cantidad > stock) {
+                Swal.fire('Error', `La cantidad total del producto (${productoExistente.cantidad + cantidad}) supera el stock.`, 'error');
+                return;
+            }
+            productoExistente.cantidad += cantidad;
+            productoExistente.subtotal = productoExistente.cantidad * productoExistente.precioUnitario;
+        } else {
+            const nombre = busquedaProductoInput.value;
+            productosCarrito.push({
+                productoId: productoSeleccionadoId,
+                nombre: nombre,
+                cantidad: cantidad,
+                precioUnitario: precioUnitario,
+                subtotal: cantidad * precioUnitario
+            });
+        }
+
+        actualizarTabla();
+        limpiarFormularioProducto();
+    }
+
+    function eliminarProducto(index) {
+        productosCarrito.splice(index, 1);
+        actualizarTabla();
+    }
+
+    function actualizarTabla() {
+        const tbody = document.getElementById('tablaProductos');
+        tbody.innerHTML = '';
+        let totalVenta = 0;
+
+        productosCarrito.forEach((p, index) => {
+            const row = `
+                <tr>
+                    <td>${p.productoId}</td>
+                    <td>${p.nombre}</td>
+                    <td>${p.cantidad}</td>
+                    <td>S/ ${p.precioUnitario.toFixed(2)}</td>
+                    <td>S/ ${p.subtotal.toFixed(2)}</td>
+                    <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarProducto(${index})">
+                        <i class="bi bi-trash"></i>
+                    </button></td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+            totalVenta += p.subtotal;
+        });
+
+        document.getElementById('totalProductos').innerText = `Total de ${productosCarrito.length} productos en el carrito`;
+        document.getElementById('totalVenta').innerText = `Total Venta: S/ ${totalVenta.toFixed(2)}`;
+    }
+
+    function limpiarFormularioProducto() {
+        busquedaProductoInput.value = '';
+        document.getElementById('cantidad').value = 1;
+        document.getElementById('stockDisponible').value = '';
+        document.getElementById('precioUnitario').value = '';
+        document.getElementById('cantidad').max = '';
+        productoSeleccionadoId = null;
+        resultadoBusquedaDiv.classList.remove('show');
+        resultadoBusquedaDiv.innerHTML = '';
+    }
+
+    function vaciarFormulario() {
+        productosCarrito = [];
+        limpiarFormularioProducto();
+        actualizarTabla();
+        document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+        document.getElementById('cliente').value = '';
+    }
+
+    function confirmarVenta() {
+        const codigoBoleta = document.getElementById('codigoVenta').value;
+        const fecha = document.getElementById('fecha').value;
+        const total = parseFloat(document.getElementById('totalVenta').innerText.replace('Total Venta: S/ ', ''));
+
+        if (!fecha) {
+            Swal.fire('Error', 'Por favor, ingrese la fecha de la venta.', 'error');
+            return;
+        }
+        if (productosCarrito.length === 0) {
+            Swal.fire('Error', 'Debe agregar al menos un producto a la venta.', 'error');
+            return;
+        }
+
+        const dniCliente = document.getElementById('dniCliente').value.trim();
+
+        if (!dniCliente || dniCliente.length !== 8) {
+            Swal.fire('Error', 'Debe ingresar un DNI válido del cliente.', 'error');
+            return;
+        }
+
+        const ventaData = {
+            dniCliente: dniCliente,
+            codigoBoleta: codigoBoleta,
+            fecha: fecha,
+            total: total,
+            detalles: productosCarrito.map(p => ({
+                productoId: p.productoId,
+                cantidad: p.cantidad,
+                precioUnitario: p.precioUnitario,
+                subtotal: p.subtotal
+            }))
+        };
+
+        fetch('/ventas/registrar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(ventaData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.message || 'Error desconocido en el servidor');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Venta registrada con éxito',
+                html: `Código de venta: <strong>${data.codigoBoleta}</strong><br><br>¿Qué desea hacer a continuación?`,
+                showCancelButton: true,
+                confirmButtonText: 'Registrar nueva venta',
+                cancelButtonText: 'Descargar Boleta PDF',
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#0d6efd'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.reload();
+                } else if (result.dismiss === Swal.DismissReason.cancel) {
+                    const pdfUrl = `/ventas/generarBoletaPdf/${data.id}`;
+                    window.open(pdfUrl, '_blank');
+                    window.location.reload();
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error al registrar la venta:', error);
+            Swal.fire('Error', 'Hubo un problema al registrar la venta: ' + error.message, 'error');
+        });
+    }
+
+    document.getElementById('cerrarSesionBtn').addEventListener('click', function(event) {
+        event.preventDefault();
+        window.location.href = '/logout';
+    });
+
+    window.onload = function() {
+        document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+    };
+
+</script>
+</body>
+</html>

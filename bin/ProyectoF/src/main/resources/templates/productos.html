@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gestión de Productos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/dashboard">
+      <i class="bi bi-box-seam-fill"></i> Gestión de Productos
+    </a>
+    <a href="/logout" class="btn btn-outline-light">Cerrar sesión</a>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h2 class="text-center text-primary mb-4">Listado de Productos</h2>
+
+  <div class="card border-primary mb-4 rounded-4 shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title text-primary mb-3"><i class="bi bi-filter-circle-fill me-2"></i>Filtros de búsqueda</h5>
+      <form class="row g-3 align-items-end" method="get" action="/productos">
+        <div class="col-md-4">
+          <label for="searchId" class="form-label">Buscar por ID:</label>
+          <input type="number" id="searchId" name="id" class="form-control" placeholder="ID del producto" th:value="${param.id}" />
+        </div>
+        <div class="col-md-4">
+          <label for="searchNombre" class="form-label">Buscar por Nombre:</label>
+          <input type="text" id="searchNombre" name="nombre" class="form-control" placeholder="Nombre del producto" th:value="${param.nombre}" />
+        </div>
+        <div class="col-md-4">
+          <label for="searchCategoria" class="form-label">Filtrar por Categoría:</label>
+          <select id="searchCategoria" name="categoriaId" class="form-select">
+            <option value="">Todas las categorías</option>
+            <option th:each="categoria : ${categorias}"
+                    th:value="${categoria.id}"
+                    th:text="${categoria.nombre}"
+                    th:selected="${categoria.id == categoriaId}">
+            </option>
+          </select>
+        </div>
+        <div class="col-md-12 d-grid">
+          <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Buscar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="text-end mb-3">
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#agregarProductoModal">
+      <i class="bi bi-plus-circle"></i> Agregar Producto
+    </button>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead class="table-primary">
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        <th>Categoría</th>
+        <th>Proveedor</th>
+        <th>Stock</th>
+        <th>Precio Compra</th>
+        <th>Precio Venta</th>
+        <th>Fecha Ingreso</th>
+        <th>Acciones</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="producto : ${productos}">
+        <td th:text="${producto.id}"></td>
+        <td th:text="${producto.nombre}"></td>
+        <td th:text="${producto.descripcion}"></td>
+        <td th:text="${producto.categoria.nombre}"></td>
+        <td th:text="${producto.proveedor.nombre}"></td>
+        <td th:text="${producto.stock}"></td>
+        <td th:text="${producto.precioCompra}"></td>
+        <td th:text="${producto.precioVenta}"></td>
+        <td th:text="${#temporals.format(producto.fechaIngreso, 'dd/MM/yyyy')}"></td>
+        <td>
+          <button type="button" class="btn btn-warning btn-sm me-1" data-bs-toggle="modal" data-bs-target="#editarProductoModal"
+                  th:data-id="${producto.id}"
+                  th:data-nombre="${producto.nombre}"
+                  th:data-descripcion="${producto.descripcion}"
+                  th:data-categoria-id="${producto.categoria.id}"
+                  th:data-proveedor-id="${producto.proveedor.id}"
+                  th:data-stock="${producto.stock}"
+                  th:data-precio-compra="${producto.precioCompra}"
+                  th:data-precio-venta="${producto.precioVenta}"
+                  th:data-fecha-ingreso="${#temporals.format(producto.fechaIngreso, 'yyyy-MM-dd')}"
+                  onclick="llenarFormularioEditar(this)">
+            <i class="bi bi-pencil-square"></i>
+          </button>
+          <form th:action="@{/productos/eliminar/{id}(id=${producto.id})}" method="post" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este producto?');">
+            <button type="submit" class="btn btn-danger btn-sm">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="agregarProductoModal" tabindex="-1" aria-labelledby="agregarProductoModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="agregarProductoModalLabel">Agregar Nuevo Producto</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form th:action="@{/productos/guardar}" method="post">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="nombreAdd" class="form-label">Nombre:</label>
+            <input type="text" id="nombreAdd" name="nombre" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label for="descripcionAdd" class="form-label">Descripción:</label>
+            <textarea id="descripcionAdd" name="descripcion" class="form-control"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="categoriaAdd" class="form-label">Categoría:</label>
+            <select id="categoriaAdd" name="categoria.id" class="form-select" required>
+              <option value="">Seleccione una categoría</option>
+              <option th:each="categoria : ${categorias}" th:value="${categoria.id}" th:text="${categoria.nombre}"></option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="proveedorAdd" class="form-label">Proveedor:</label>
+            <select id="proveedorAdd" name="proveedor.id" class="form-select" required>
+              <option value="">Seleccione un proveedor</option>
+              <option th:each="proveedor : ${proveedores}" th:value="${proveedor.id}" th:text="${proveedor.nombre}"></option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="stockAdd" class="form-label">Stock:</label>
+            <input type="number" id="stockAdd" name="stock" class="form-control" value="0" min="0" required />
+          </div>
+          <div class="mb-3">
+            <label for="precioCompraAdd" class="form-label">Precio Compra:</label>
+            <input type="number" id="precioCompraAdd" name="precioCompra" class="form-control" step="0.01" required />
+          </div>
+          <div class="mb-3">
+            <label for="precioVentaAdd" class="form-label">Precio Venta:</label>
+            <input type="number" id="precioVentaAdd" name="precioVenta" class="form-control" step="0.01" required />
+          </div>
+          <div class="mb-3">
+            <label for="fechaIngresoAdd" class="form-label">Fecha Ingreso:</label>
+            <input type="date" id="fechaIngresoAdd" name="fechaIngreso" class="form-control" required />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <button type="submit" class="btn btn-success">Guardar Producto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editarProductoModal" tabindex="-1" aria-labelledby="editarProductoModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="editarProductoModalLabel">Editar Producto</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form th:action="@{/productos/editar}" method="post">
+        <div class="modal-body">
+          <input type="hidden" id="idEdit" name="id" />
+          <div class="mb-3">
+            <label for="nombreEdit" class="form-label">Nombre:</label>
+            <input type="text" id="nombreEdit" name="nombre" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label for="descripcionEdit" class="form-label">Descripción:</label>
+            <textarea id="descripcionEdit" name="descripcion" class="form-control"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="categoriaEdit" class="form-label">Categoría:</label>
+            <select id="categoriaEdit" name="categoria.id" class="form-select" required>
+              <option th:each="categoria : ${categorias}" th:value="${categoria.id}" th:text="${categoria.nombre}"></option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="proveedorEdit" class="form-label">Proveedor:</label>
+            <select id="proveedorEdit" name="proveedor.id" class="form-select" required>
+              <option th:each="proveedor : ${proveedores}" th:value="${proveedor.id}" th:text="${proveedor.nombre}"></option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="stockEdit" class="form-label">Stock:</label>
+            <input type="number" id="stockEdit" name="stock" class="form-control" min="0" required />
+          </div>
+          <div class="mb-3">
+            <label for="precioCompraEdit" class="form-label">Precio Compra:</label>
+            <input type="number" id="precioCompraEdit" name="precioCompra" class="form-control" step="0.01" required />
+          </div>
+          <div class="mb-3">
+            <label for="precioVentaEdit" class="form-label">Precio Venta:</label>
+            <input type="number" id="precioVentaEdit" name="precioVenta" class="form-control" step="0.01" required />
+          </div>
+          <div class="mb-3">
+            <label for="fechaIngresoEdit" class="form-label">Fecha Ingreso:</label>
+            <input type="date" id="fechaIngresoEdit" name="fechaIngreso" class="form-control" required />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <button type="submit" class="btn btn-warning text-white">Actualizar Producto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  function llenarFormularioEditar(button) {
+    const id = button.getAttribute('data-id');
+    const nombre = button.getAttribute('data-nombre');
+    const descripcion = button.getAttribute('data-descripcion');
+    const categoriaId = button.getAttribute('data-categoria-id');
+    const proveedorId = button.getAttribute('data-proveedor-id');
+    const stock = button.getAttribute('data-stock');
+    const precioCompra = button.getAttribute('data-precio-compra');
+    const precioVenta = button.getAttribute('data-precio-venta');
+    const fechaIngreso = button.getAttribute('data-fecha-ingreso'); // Formato YYYY-MM-dd
+
+    document.getElementById('idEdit').value = id;
+    document.getElementById('nombreEdit').value = nombre;
+    document.getElementById('descripcionEdit').value = descripcion;
+    document.getElementById('stockEdit').value = stock;
+    document.getElementById('precioCompraEdit').value = precioCompra;
+    document.getElementById('precioVentaEdit').value = precioVenta;
+    document.getElementById('fechaIngresoEdit').value = fechaIngreso;
+
+    document.getElementById('categoriaEdit').value = categoriaId;
+    document.getElementById('proveedorEdit').value = proveedorId;
+  }
+
+  window.onload = function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('fechaIngresoAdd').value = today;
+  };
+</script>
+</body>
+</html>

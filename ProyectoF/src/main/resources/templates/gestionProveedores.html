@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestión de Proveedores</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-success-subtle min-vh-100">
+
+<nav class="navbar bg-success navbar-dark px-4">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center" href="/dashboard">
+            <i class="bi bi-house-door-fill me-2"></i> Panel de Administración
+        </a>
+        <a href="/login" class="btn btn-outline-light">Cerrar Sesión</a>
+    </div>
+</nav>
+
+<div class="container my-4 p-4 bg-white rounded-4 shadow">
+    <h2 class="text-center text-success mb-4">Datos del Proveedor</h2>
+
+    <div class="d-flex justify-content-between mb-3">
+        <input type="text" class="form-control w-25" placeholder="🔍 Buscar...">
+        <div>
+            <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#modalRegistro">+ Agregar</button>
+            <button class="btn btn-warning text-white me-2" onclick="abrirModalEditar()"><i class="bi bi-pencil-square"></i> Editar</button>
+            <button class="btn btn-danger" onclick="confirmarEliminacion()"><i class="bi bi-trash"></i> Eliminar</button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped" id="tablaDatos">
+            <thead class="table-success">
+            <tr>
+                <th></th>
+                <th>Razón Social</th>
+                <th>R.U.C.</th>
+                <th>Dirección</th>
+                <th>Nro. de contacto</th>
+                <th>Correo empresarial</th>
+            </tr>
+            </thead>
+            <tbody id="cuerpoTabla">
+            <tr th:each="proveedor : ${proveedores}">
+                <td><input type="radio" name="seleccion" th:value="${proveedor.id}"></td>
+                <td th:text="${proveedor.nombre}"></td>
+                <td th:text="${proveedor.ruc}"></td>
+                <td th:text="${proveedor.direccion}"></td>
+                <td th:text="${proveedor.contacto}"></td> <td th:text="${proveedor.email}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="modalRegistro" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-success">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalLabel">Registro de Proveedor</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/proveedores/nuevo" method="POST"> <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Razón Social *</label>
+                        <input type="text" name="nombre" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">R.U.C. *</label>
+                        <input type="text" name="ruc" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Dirección *</label>
+                        <input type="text" name="direccion" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Número de contacto *</label>
+                        <input type="text" name="contacto" class="form-control" required> </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Correo empresarial *</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                </div>
+                    <div class="form-text mt-2">(*) Campos obligatorios</div>
+                    <button type="submit" class="btn btn-success mt-3">Registrar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-labelledby="modalEditarLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-warning">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="modalEditarLabel">Editar Parámetros del Proveedor</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditar" method="POST">
+                    <input type="hidden" id="editProveedorId" name="id"> <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Razón Social *</label>
+                        <input type="text" id="editRazon" name="nombre" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">R.U.C. *</label>
+                        <input type="text" id="editRuc" name="ruc" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Dirección *</label>
+                        <input type="text" id="editDireccion" name="direccion" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Número de contacto *</label>
+                        <input type="text" id="editContacto" name="contacto" class="form-control" required> </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Correo empresarial *</label>
+                        <input type="email" id="editCorreo" name="email" class="form-control" required>
+                    </div>
+                </div>
+                    <div class="form-text mt-2">(*) Campos obligatorios</div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-warning text-white" onclick="guardarCambios()">Guardar cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    function abrirModalEditar() {
+        const seleccion = document.querySelector('input[name="seleccion"]:checked');
+        if (!seleccion) {
+            Swal.fire('Seleccione un proveedor para editar.', '', 'warning');
+            return;
+        }
+
+        const idProveedor = seleccion.value;
+        const fila = seleccion.closest('tr');
+
+        document.getElementById('editProveedorId').value = idProveedor;
+        document.getElementById('editRazon').value = fila.cells[1].textContent;
+        document.getElementById('editRuc').value = fila.cells[2].textContent;
+        document.getElementById('editDireccion').value = fila.cells[3].textContent;
+        document.getElementById('editContacto').value = fila.cells[4].textContent;
+        document.getElementById('editCorreo').value = fila.cells[5].textContent;
+
+        document.getElementById('formEditar').action = `/proveedores/editar/${idProveedor}`;
+
+        const modal = new bootstrap.Modal(document.getElementById('modalEditar'));
+        modal.show();
+    }
+
+    function guardarCambios() {
+        document.getElementById('formEditar').submit();
+    }
+
+    function confirmarEliminacion() {
+        const seleccion = document.querySelector('input[name="seleccion"]:checked');
+        if (!seleccion) {
+            Swal.fire('Seleccione un proveedor para eliminar.', '', 'warning');
+            return;
+        }
+
+        const idProveedor = seleccion.value;
+
+        Swal.fire({
+            title: '¿Eliminar proveedor seleccionado?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Eliminar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/proveedores/eliminar/${idProveedor}`;
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
